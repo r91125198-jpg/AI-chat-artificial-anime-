@@ -1,0 +1,8 @@
+{
+  "name": "AI chat artificial anime",
+  "description": "An advanced multimodal AI assistant founded by kiyotaka Ayanako ji and created by NST RAFI. Developed in Median Japan in Bangladesh.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
