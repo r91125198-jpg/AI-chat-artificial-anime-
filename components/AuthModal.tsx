@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { X, Chrome, Facebook, LogOut, User, Mail, Lock, UserPlus, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Chrome, Facebook, LogOut, User, Mail, Lock, UserPlus, ArrowRight, AlertCircle } from 'lucide-react';
 
 interface UserProfile {
   name: string;
@@ -22,12 +22,49 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, user, onLogin, o
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setError(null);
+      setEmail('');
+      setPassword('');
+      setName('');
+    }
+  }, [isOpen, mode]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin('manual', { email, name: mode === 'register' ? name : email.split('@')[0] });
+    setError(null);
+
+    // Get mock users from localStorage
+    const storedUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
+
+    if (mode === 'register') {
+      // Check if user already exists
+      const userExists = storedUsers.find((u: any) => u.email === email);
+      if (userExists) {
+        setError('This email is already registered.');
+        return;
+      }
+
+      // Save new mock user
+      const newUser = { email, password, name };
+      localStorage.setItem('mock_users', JSON.stringify([...storedUsers, newUser]));
+      
+      onLogin('manual', { email, name });
+    } else {
+      // Login validation
+      const validUser = storedUsers.find((u: any) => u.email === email && u.password === password);
+      
+      if (validUser) {
+        onLogin('manual', { email, name: validUser.name });
+      } else {
+        setError('ভুল ইমেইল অথবা পাসওয়ার্ড! আবার চেষ্টা করুন।');
+      }
+    }
   };
 
   return (
@@ -59,7 +96,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, user, onLogin, o
               <div>
                 <h3 className="text-lg font-bold text-white">{user.name}</h3>
                 <p className="text-sm text-slate-400">{user.email}</p>
-                {user.bio && <p className="text-xs text-slate-500 mt-2 max-w-[200px] line-clamp-2">{user.bio}</p>}
               </div>
               <button 
                 onClick={onLogout}
@@ -85,6 +121,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, user, onLogin, o
                 </button>
               </div>
 
+              {error && (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs animate-in fade-in slide-in-from-top-1">
+                  <AlertCircle size={14} />
+                  <span>{error}</span>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-3">
                 {mode === 'register' && (
                   <div className="relative">
@@ -107,7 +150,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, user, onLogin, o
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:ring-2 focus:ring-blue-500/50 transition-all outline-none"
+                    className={`w-full bg-slate-900 border ${error ? 'border-red-500/50' : 'border-slate-800'} rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:ring-2 focus:ring-blue-500/50 transition-all outline-none`}
                   />
                 </div>
                 <div className="relative">
@@ -118,7 +161,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, user, onLogin, o
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:ring-2 focus:ring-blue-500/50 transition-all outline-none"
+                    className={`w-full bg-slate-900 border ${error ? 'border-red-500/50' : 'border-slate-800'} rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:ring-2 focus:ring-blue-500/50 transition-all outline-none`}
                   />
                 </div>
                 <button 
